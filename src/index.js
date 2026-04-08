@@ -1,12 +1,14 @@
+// src/index.js
 import './css/style.css';
 import { App } from './js/app';
 
-// Запускаем приложение
+console.log('Index.js loaded');
+
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM loaded');
     try {
         new App();
-        console.log('Workers app started successfully');
     } catch (error) {
-        console.error('Failed to initialize Workers app:', error);
+        console.error('Error:', error);
     }
 });

@@ -1,59 +1,90 @@
+// src/js/newsService.js
 export class NewsService {
     constructor() {
-
-        this.apiUrl = 'https://workers-server.onrender.com/api/news';
+        this.apiUrl = 'http://localhost:3000/api/news';
         this.cacheName = 'workers-news-v1';
-        this.localUrl = 'http://localhost:3000/api/news';
     }
 
     async fetchNews() {
-
         try {
+            // Пробуем загрузить с сервера
             const response = await fetch(this.apiUrl);
             if (!response.ok) throw new Error('Network error');
             const data = await response.json();
 
-
-            await this.cacheData(data);
+            // Сохраняем в кэш
+            await this.saveToCache(data);
             return data;
         } catch (error) {
             console.log('Network error, trying cache...');
 
-            // Если сеть не работает, берем из кэша
-            const cached = await this.getCachedData();
+            // Пробуем взять из кэша
+            const cached = await this.loadFromCache();
             if (cached) {
                 return cached;
             }
 
-            throw new Error('No connection and no cache');
+            // Если кэша нет - возвращаем тестовые данные
+            return this.getMockData();
         }
     }
 
-    async cacheData(data) {
+    async saveToCache(data) {
         if (!caches) return;
-
         try {
             const cache = await caches.open(this.cacheName);
-            await cache.put(this.apiUrl, new Response(JSON.stringify(data), {
-                headers: { 'Content-Type': 'application/json' }
-            }));
-        } catch (error) {
-            console.error('Cache error:', error);
+            await cache.put(this.apiUrl, new Response(JSON.stringify(data)));
+        } catch (e) {
+            console.error('Cache save error:', e);
         }
     }
 
-    async getCachedData() {
+    async loadFromCache() {
         if (!caches) return null;
-
         try {
             const cache = await caches.open(this.cacheName);
-            const cached = await cache.match(this.apiUrl);
-            if (cached) {
-                return cached.json();
+            const response = await cache.match(this.apiUrl);
+            if (response) {
+                return response.json();
             }
-        } catch (error) {
-            console.error('Cache read error:', error);
+        } catch (e) {
+            console.error('Cache load error:', e);
         }
         return null;
+    }
+
+    getMockData() {
+        return [
+            {
+                title: 'Дюна 2 собрала миллиард долларов',
+                description: 'Продолжение эпической саги Дени Вильнева стало самым кассовым фильмом года, обогнав "Барби" и "Оппенгеймера"',
+                source: 'Variety',
+                date: '15 марта 2024'
+            },
+            {
+                title: 'Новый трейлер Оппенгеймера',
+                description: 'Кристофер Нолан представляет финальный трейлер своего байопика о создателе атомной бомбы. Премьера уже скоро.',
+                source: 'Hollywood Reporter',
+                date: '14 марта 2024'
+            },
+            {
+                title: 'Оскар 2024: полный список победителей',
+                description: '"Оппенгеймер" получил 7 статуэток, включая "Лучший фильм". "Барби" - "Лучшую песню". "Бедные-несчастные" - "Лучшую женскую роль".',
+                source: 'Deadline',
+                date: '12 марта 2024'
+            },
+            {
+                title: 'Дэдпул 3: первые отзывы',
+                description: 'Критики в восторге от возвращения Райана Рейнольдса и дебюта Хью Джекмана в роли Росомахи. Фильм выходит в июле.',
+                source: 'IGN',
+                date: '10 марта 2024'
+            },
+            {
+                title: 'Веном 3: дата выхода',
+                description: 'Финальная часть трилогии с Томом Харди выйдет в ноябре 2024 года. Съемки уже завершены.',
+                source: 'Marvel',
+                date: '8 марта 2024'
+            }
+        ];
     }
 }
